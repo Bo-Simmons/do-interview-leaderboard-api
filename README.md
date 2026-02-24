@@ -35,6 +35,8 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 DigitalOcean App Platform buildpack detection relies on a root-level `requirements.txt`, so this repository includes one for deployment detection and runtime installs.
 
+App Platform also reads a root-level `.python-version` to choose the Python runtime; this project targets Python `3.12` for compatibility (for example, with `pydantic-core`/PyO3 builds).
+
 For local development, you can still use the existing `pyproject.toml` workflow (for example, `pip install -e ".[dev]"`) exactly as before.
 
 ## Run tests
