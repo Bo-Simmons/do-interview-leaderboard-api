@@ -31,6 +31,12 @@ export REDIS_URL=redis://localhost:6379/0
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+## DigitalOcean App Platform deployment note
+
+DigitalOcean App Platform buildpack detection relies on a root-level `requirements.txt`, so this repository includes one for deployment detection and runtime installs.
+
+For local development, you can still use the existing `pyproject.toml` workflow (for example, `pip install -e ".[dev]"`) exactly as before.
+
 ## Run tests
 
 ```bash
