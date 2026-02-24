@@ -1,0 +1,37 @@
+# Virtual environments
+.venv/
+
+# Python cache/artifacts
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Packaging artifacts
+do_interview_leaderboard_api.egg-info/
+*.egg-info/
+build/
+dist/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Lint/type-check caches
+.ruff_cache/
+.mypy_cache/
+
+# Local environment files
+.env
+.env.*
+
+# Redis persistence
+dump.rdb
+*.rdb
+
+# OS/editor junk
+.DS_Store
+.vscode/
+.idea/
