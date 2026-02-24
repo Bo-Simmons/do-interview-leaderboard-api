@@ -1,3 +1,5 @@
+"""Custom API exception type translated into the standard error response body."""
+
 from __future__ import annotations
 
 from typing import Any

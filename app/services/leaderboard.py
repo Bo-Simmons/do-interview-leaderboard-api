@@ -1,3 +1,5 @@
+"""Core leaderboard operations backed by Redis sorted sets."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -51,6 +53,7 @@ class LeaderboardService:
         applied_score = await self.redis.zscore(key, user_id)
         if rank is None or applied_score is None:
             raise RuntimeError("Score write/read inconsistency")
+        # Redis returns zero-based rank; API contract is one-based.
         return RankedUser(rank=rank + 1, user_id=user_id, score=int(applied_score))
 
     async def get_leaderboard(self, game_id: str, limit: int, offset: int) -> list[RankedUser]:

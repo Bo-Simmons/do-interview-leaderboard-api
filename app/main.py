@@ -1,4 +1,8 @@
+"""FastAPI application wiring for routes, error handlers, and lifespan."""
+
 from __future__ import annotations
+
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -11,12 +15,19 @@ from app.services.leaderboard import LeaderboardService
 from app.storage.redis import create_redis_client
 
 
-def create_app() -> FastAPI:
-    app = FastAPI(title="Leaderboard API", version="1.0.0")
-
+@asynccontextmanager
+async def app_lifespan(app: FastAPI):
     redis_client = create_redis_client()
     app.state.redis = redis_client
     app.state.leaderboard_service = LeaderboardService(redis_client)
+    try:
+        yield
+    finally:
+        await redis_client.aclose()
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="Leaderboard API", version="1.0.0", lifespan=app_lifespan)
 
     @app.exception_handler(APIError)
     async def api_error_handler(_: Request, exc: APIError) -> JSONResponse:
@@ -38,10 +49,6 @@ def create_app() -> FastAPI:
             ),
         )
         return JSONResponse(status_code=400, content=payload.model_dump(exclude_none=True))
-
-    @app.on_event("shutdown")
-    async def close_redis() -> None:
-        await app.state.redis.aclose()
 
     app.include_router(router)
     return app

@@ -1,10 +1,17 @@
+"""Pydantic request/response schemas for the public leaderboard API.
+
+These models define input validation and response contracts used by routes
+and exception handlers.
+"""
+
 from __future__ import annotations
 
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 
-Identifier = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
+IDENTIFIER_PATTERN = r"^[A-Za-z0-9_-]{1,64}$"
+Identifier = Annotated[str, StringConstraints(pattern=IDENTIFIER_PATTERN)]
 
 
 class ErrorBody(BaseModel):
@@ -61,9 +68,3 @@ class HealthResponse(BaseModel):
 
 class ReadyResponse(BaseModel):
     status: Literal["ok"]
-
-
-class ErrorEnvelope(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    error: ErrorBody
