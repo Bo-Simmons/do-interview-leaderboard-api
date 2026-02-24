@@ -2,6 +2,13 @@
 
 Production-minded FastAPI service for global game leaderboards backed by Redis Sorted Sets.
 
+## Live Deployment (DigitalOcean)
+
+- Live base URL: `https://do-interview-leaderboard-api-4ns9n.ondigitalocean.app`
+- All API endpoints are served under the `/v1` prefix.
+- Interactive API docs are available at: https://do-interview-leaderboard-api-4ns9n.ondigitalocean.app/docs
+- Backing store: DigitalOcean Managed Valkey (Redis-compatible), with the app deployed on DigitalOcean App Platform.
+
 ## API Endpoints
 
 - `GET /v1/healthz`
@@ -31,13 +38,11 @@ export REDIS_URL=redis://localhost:6379/0
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-## DigitalOcean App Platform deployment note
+## Deployment Notes
 
-DigitalOcean App Platform buildpack detection relies on a root-level `requirements.txt`, so this repository includes one for deployment detection and runtime installs.
-
-App Platform also reads a root-level `.python-version` to choose the Python runtime; this project targets Python `3.12` for compatibility (for example, with `pydantic-core`/PyO3 builds).
-
-For local development, you can still use the existing `pyproject.toml` workflow (for example, `pip install -e ".[dev]"`) exactly as before.
+- App Platform run command must honor `PORT` (for example: `uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}`), so the container binds the platform-assigned port in production.
+- Python version is pinned via root-level `.python-version` to `3.12` for App Platform buildpack/runtime compatibility (including binary wheels/toolchain expectations during install).
+- `REDIS_URL` is provided as an App Platform environment variable and points at the attached DigitalOcean Managed Valkey cluster.
 
 ## Run tests
 
@@ -53,7 +58,7 @@ pytest -q
 
 ## API Examples (curl)
 
-> Examples below use `jq` for readability; you can omit `| jq` if not installed.
+> Examples below use local development URL `http://127.0.0.1:8000` and `jq` for readability; you can omit `| jq` if not installed.
 
 ### Submit a score (default `mode=best`)
 
@@ -87,6 +92,63 @@ curl -sS 'http://127.0.0.1:8000/v1/games/chess/leaderboard?limit=10&offset=0' | 
 
 ```bash
 curl -sS 'http://127.0.0.1:8000/v1/games/chess/users/alice/context?window=1' | jq
+```
+
+## Live API Examples (curl)
+
+> These examples use `jq` for readability; `jq` is optional.
+
+```bash
+export BASE="https://do-interview-leaderboard-api-4ns9n.ondigitalocean.app"
+```
+
+### Health and readiness
+
+```bash
+curl -sS "$BASE/v1/healthz" | jq
+curl -sS "$BASE/v1/readyz" | jq
+```
+
+### Submit three scores
+
+```bash
+curl -sS -X POST "$BASE/v1/games/chess/scores" \
+  -H 'content-type: application/json' \
+  -d '{"user_id":"alice","score":1200}' | jq
+
+curl -sS -X POST "$BASE/v1/games/chess/scores" \
+  -H 'content-type: application/json' \
+  -d '{"user_id":"bob","score":1100}' | jq
+
+curl -sS -X POST "$BASE/v1/games/chess/scores" \
+  -H 'content-type: application/json' \
+  -d '{"user_id":"carol","score":1300}' | jq
+```
+
+### `best` mode ignores a lower score
+
+```bash
+# First set a high score
+curl -sS -X POST "$BASE/v1/games/chess/scores" \
+  -H 'content-type: application/json' \
+  -d '{"user_id":"alice","score":1500,"mode":"best"}' | jq
+
+# Lower score is ignored; alice remains at 1500
+curl -sS -X POST "$BASE/v1/games/chess/scores" \
+  -H 'content-type: application/json' \
+  -d '{"user_id":"alice","score":900,"mode":"best"}' | jq
+```
+
+### Get top 10 leaderboard
+
+```bash
+curl -sS "$BASE/v1/games/chess/leaderboard?limit=10&offset=0" | jq
+```
+
+### Get user context (`window=1`)
+
+```bash
+curl -sS "$BASE/v1/games/chess/users/alice/context?window=1" | jq
 ```
 
 ## Design & Semantics
