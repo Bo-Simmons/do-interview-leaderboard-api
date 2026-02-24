@@ -1,9 +1,12 @@
+"""HTTP route handlers for leaderboard operations and service health checks."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Path, Query, Request
 
 from app.api.errors import APIError
 from app.models.schemas import (
+    IDENTIFIER_PATTERN,
     HealthResponse,
     LeaderboardResponse,
     LeaderboardRow,
@@ -14,8 +17,6 @@ from app.models.schemas import (
     UserContextResponse,
 )
 from app.services.leaderboard import LeaderboardService, UserNotFoundError
-
-IDENTIFIER_PATTERN = r"^[A-Za-z0-9_-]{1,64}$"
 
 router = APIRouter(prefix="/v1")
 
@@ -99,6 +100,7 @@ async def get_user_context(
     )
 
 
+# These probes are intended for infrastructure and do not need to appear in API docs.
 @router.get("/healthz", response_model=HealthResponse, include_in_schema=False)
 async def healthz() -> HealthResponse:
     return HealthResponse(status="ok")
@@ -107,6 +109,7 @@ async def healthz() -> HealthResponse:
 @router.get("/readyz", response_model=ReadyResponse, include_in_schema=False)
 async def readyz(service: LeaderboardService = Depends(get_service)) -> ReadyResponse:
     try:
+        # Readiness verifies backing Redis connectivity, not just process liveness.
         is_ready = await service.ping()
     except Exception as exc:
         raise APIError(

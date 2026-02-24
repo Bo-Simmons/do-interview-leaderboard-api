@@ -1,3 +1,5 @@
+"""Redis client creation helpers used by application startup."""
+
 from __future__ import annotations
 
 import os
